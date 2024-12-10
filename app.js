@@ -103,6 +103,7 @@ class WordGameFSM {
       guessedWords: this.words.slice(0, this.currentWordIndex),
       gameTitle: this.gameTitle,
       lastPlayed: this.lastPlayed,
+      words: this.words
     };
   }
 }
