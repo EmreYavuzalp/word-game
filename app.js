@@ -76,7 +76,12 @@ class WordGameFSM {
 
   // Get the current state
   getCurrentState() {
-    return this.currentState;
+    return {
+      currentState: this.currentState,
+      players: this.players,
+      remainingWords: this.words.slice(this.currentWordIndex).length,
+      guessedWords: this.words.slice(0, this.currentWordIndex),
+    };
   }
 
   // List players
@@ -134,11 +139,7 @@ app.post('/guess', (req, res) => {
   try {
     const { playerId, guessedWord } = req.body;
     game.submitWord(playerId, guessedWord);
-    if (game.getCurrentState() === game.states.GAME_COMPLETED) {
-      res.status(200).json({ message: 'Game completed! All words guessed.' });
-    } else {
-      res.status(200).json({ message: 'Correct guess!' });
-    }
+    res.status(200).json(game.getCurrentState());
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -146,7 +147,7 @@ app.post('/guess', (req, res) => {
 
 // Get the current state
 app.get('/state', (req, res) => {
-  res.status(200).json({ state: game.getCurrentState() });
+  res.status(200).json(game.getCurrentState());
 });
 
 // List players
