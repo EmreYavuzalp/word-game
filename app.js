@@ -19,6 +19,15 @@ class WordGameFSM {
     this.players = [];
     this.words = [];
     this.currentWordIndex = 0;
+    this.gameTitle = '';
+  }
+
+  // Set the game title
+  setGameTitle(title) {
+    if (this.currentState !== this.states.WAITING_FOR_PLAYERS) {
+      throw new Error('Cannot set game title once the game has started.');
+    }
+    this.gameTitle = title;
   }
 
   // Add a player to the game
@@ -81,6 +90,7 @@ class WordGameFSM {
       players: this.players,
       remainingWords: this.words.slice(this.currentWordIndex).length,
       guessedWords: this.words.slice(0, this.currentWordIndex),
+      gameTitle: this.gameTitle,
     };
   }
 
@@ -101,6 +111,17 @@ class WordGameFSM {
 const game = new WordGameFSM();
 
 // REST API Endpoints
+
+// Set the game title
+app.post('/game-title', (req, res) => {
+  try {
+    const { title } = req.body;
+    game.setGameTitle(title);
+    res.status(200).json({ message: `Game title set to '${title}'.` });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 
 // Add a player
 app.post('/players', (req, res) => {
