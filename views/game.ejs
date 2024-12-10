@@ -81,7 +81,6 @@
 <body>
   <div class="container">
     <h1><%= state.gameTitle || 'Word Game' %></h1>
-    <h2>Current Game State: <%= state.currentState %></h2>
 
     <% if (state.currentState === 'WAITING_FOR_PLAYERS') { %>
       <div class="game-controls">
