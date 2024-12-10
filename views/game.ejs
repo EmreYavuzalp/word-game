@@ -93,17 +93,17 @@
     <% } %>
 
     <% if (state.currentState === 'GAME_IN_PROGRESS') { %>
-      <div class="word-display">
-        <% state.guessedWords.forEach((entry) => { %>
-          <div>
-            <%= entry.word %>
-            <span class="guesser">(Guessed by: <%= entry.guesser %>)</span>
+        <div class="word-display">
+            <% state.words.forEach((word) => { %>
+              <div>
+                <% const guessedWord = state.guessedWords.find(gw => gw.word === word); %>
+                <%= guessedWord ? word : word.charAt(0) + '_'.repeat(word.length - 1) %>
+                <% if (guessedWord) { %>
+                  <span class="guesser">(<%= guessedWord.guesser %>)</span>
+                <% } %>
+              </div>
+            <% }); %>
           </div>
-        <% }); %>
-        <% state.words.slice(state.guessedWords.length).forEach((word) => { %>
-          <div><%= word.charAt(0) + '_'.repeat(word.length - 1) %></div>
-        <% }); %>
-      </div>
       <div class="guess-box">
         <input type="text" id="guess-word" placeholder="Your Guess" onkeypress="handleEnter(event)">
         <button onclick="submitGuess()">Submit Guess</button>
@@ -121,72 +121,90 @@
     <% } %>
 
     <div class="players-container">
-      <% state.players.forEach(player => { %>
-        <div class="card">
-          <strong><%= player.displayName %></strong><br>
-          Score: <%= player.score %>
-        </div>
-      <% }); %>
-    </div>
-
-    <% if (state.lastPlayed) { %>
-      <div class="card last-guess-card">
-        <h3>Last Guess</h3>
-        <p>
-          <strong>Player:</strong> <%= state.lastPlayed.displayName %><br>
-          <strong>Guess:</strong> <%= state.lastPlayed.guessedWord %><br>
-          <strong>Result:</strong> <%= state.lastPlayed.correct ? 'Correct' : 'Incorrect' %>
-        </p>
+        <% state.players.forEach(player => { %>
+          <div class="card">
+            <strong><%= player.displayName %></strong><br>
+            Score: <%= player.score %>
+          </div>
+        <% }); %>
       </div>
-    <% } %>
-  </div>
-
-  <script>
-    function xhrRequest(endpoint, method, data) {
-      fetch(endpoint, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-      }).then(res => res.json()).then(() => window.location.reload());
-    }
-
-    function setGameTitle() {
-      const title = document.getElementById('game-title').value;
-      xhrRequest('/game-title', 'POST', { title });
-    }
-
-    function addWord() {
-      const word = document.getElementById('game-word').value;
-      xhrRequest('/words', 'POST', { word });
-    }
-
-    function startGame() {
-      xhrRequest('/start', 'POST', {});
-    }
-
-    function handleEnter(event) {
-      if (event.key === 'Enter') {
-        submitGuess();
-      }
-    }
-
-    function submitGuess() {
-      const guessedWord = document.getElementById('guess-word').value;
+  
+      <% if (state.lastPlayed) { %>
+        <div class="card last-guess-card">
+          <h3>Last Guess</h3>
+          <p>
+            <strong>Player:</strong> <%= state.lastPlayed.displayName %><br>
+            <strong>Guess:</strong> <%= state.lastPlayed.guessedWord %><br>
+            <strong>Result:</strong> <%= state.lastPlayed.correct ? 'Correct' : 'Incorrect' %>
+          </p>
+        </div>
+      <% } %>
+    </div>
+  
+    <script>
+      const gameId = new URL(window.location.href).pathname.split('/').pop();
       const playerName = new URLSearchParams(window.location.search).get('playerName');
-      fetch('/players', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ displayName: playerName })
-      }).then(res => res.json()).then(player => {
-        xhrRequest('/guess', 'POST', {
-          playerId: player.id, guessedWord
-        });
-      });
+
+      function xhrRequest(endpoint, method, data) {
+        fetch(`/${gameId}${endpoint}`, {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        }).then(res => res.json()).then(() => window.location.reload());
+      }
+
+      function setGameTitle() {
+        const title = document.getElementById('game-title').value;
+        xhrRequest('/game-title', 'POST', { title });
+      }
+
+      function addWord() {
+        const word = document.getElementById('game-word').value;
+        xhrRequest('/words', 'POST', { word });
+      }
+
+      function startGame() {
+        xhrRequest('/start', 'POST', {});
+      }
+
+      function handleEnter(event) {
+        if (event.key === 'Enter') {
+            submitGuess();
+        }
+      }
+
+      function submitGuess() {
+        const guessedWord = document.getElementById('guess-word').value;
+
+  fetch(`/${gameId}/guess`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      playerId: playerName, // Assuming playerName holds the player ID
+      guessedWord
+    })
+  })
+  .then(res => {
+    if (!res.ok) {
+      throw new Error('Failed to submit guess');
     }
-  </script>
+    return res.json();
+  })
+  .then(data => {
+    console.log('Guess submitted successfully', data);
+    window.location.reload(); // Refresh the game state
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Error submitting guess: ' + error.message);
+  });
+}
+
+    </script>
+  </div>
 </body>
 </html>

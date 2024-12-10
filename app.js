@@ -2,6 +2,7 @@
 const { v4: uuidv4 } = require('uuid');
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const port = 3000;
@@ -12,7 +13,8 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Define the finite state machine class
 class WordGameFSM {
-  constructor() {
+  constructor(gameId) {
+    this.gameId = gameId;
     this.states = {
       WAITING_FOR_PLAYERS: 'WAITING_FOR_PLAYERS',
       GAME_IN_PROGRESS: 'GAME_IN_PROGRESS',
@@ -22,7 +24,6 @@ class WordGameFSM {
     this.currentState = this.states.WAITING_FOR_PLAYERS;
     this.players = [];
     this.words = [];
-    this.currentWordIndex = 0;
     this.gameTitle = '';
     this.lastPlayed = null;
     this.guessedWords = [];
@@ -60,7 +61,6 @@ class WordGameFSM {
     }
 
     this.currentState = this.states.GAME_IN_PROGRESS;
-    this.currentWordIndex = 0;
     this.guessedWords = [];
   }
 
@@ -69,13 +69,12 @@ class WordGameFSM {
       throw new Error('Game is not in progress.');
     }
 
-    const player = this.players.find(p => p.id === playerId);
+    const player = this.players.find(p => p.displayName === playerId);
     if (!player) {
       throw new Error('Player not found.');
     }
 
-    const currentWord = this.words[this.currentWordIndex];
-    const isCorrect = guessedWord === currentWord;
+    const isCorrect = this.words.includes(guessedWord);
 
     this.lastPlayed = {
       playerId: player.id,
@@ -84,107 +83,161 @@ class WordGameFSM {
       correct: isCorrect,
     };
 
-    if (isCorrect) {
+    if (isCorrect && !this.guessedWords.some(w => w.word === guessedWord)) {
       player.score += 10;
       this.guessedWords.push({ word: guessedWord, guesser: player.displayName });
-      this.currentWordIndex++;
+    }
 
-      if (this.currentWordIndex >= this.words.length) {
-        this.currentState = this.states.GAME_COMPLETED;
-      }
+    if (this.guessedWords.length >= this.words.length) {
+      this.currentState = this.states.GAME_COMPLETED;
     }
   }
 
   getCurrentState() {
     return {
+      gameId: this.gameId,
       currentState: this.currentState,
       players: this.players.map(p => ({
         id: p.id,
         displayName: p.displayName,
         score: p.score,
       })),
-      remainingWords: this.words.slice(this.currentWordIndex).length,
       guessedWords: this.guessedWords,
       gameTitle: this.gameTitle,
       lastPlayed: this.lastPlayed,
       words: this.words,
     };
   }
-
-  printGameState() {
-    console.log('Current Game State:', this.getCurrentState());
-  }
 }
 
-const game = new WordGameFSM();
+const games = new Map();
 
 // API Endpoints
-app.post('/game-title', (req, res) => {
+app.post('/create-random-game/:gameId', (req, res) => {
+  fs.readFile(path.join(__dirname, 'pipes.txt'), 'utf-8', (err, data) => {
+    if (err) return res.status(500).json({ error: 'Failed to read pipes.txt' });
+
+    const lines = data.split('\n').filter(line => line.includes('|'));
+    const randomLine = lines[Math.floor(Math.random() * lines.length)];
+    const [gameTitle, wordsString] = randomLine.split('|');
+    const words = wordsString.split(',').map(w => w.trim());
+
+    const gameId = req.params.gameId || uuidv4();
+    const game = new WordGameFSM(gameId);
+    game.setGameTitle(gameTitle);
+    game.addPlayer(req.body.displayName);
+    words.forEach(word => game.addWord(word));
+    games.set(gameId, game);
+
+    game.startGame();
+    res.status(201).json({ gameId, gameTitle, words, message: 'Random game created and started successfully.' });
+  });
+});
+app.post('/:gameId/game-title', (req, res) => {
   try {
-    const { title } = req.body;
-    game.setGameTitle(title);
-    game.printGameState();
-    res.status(200).json({ message: `Game title set to '${title}'.` });
+    const game = games.get(req.params.gameId);
+    if (!game) throw new Error('Game not found.');
+    game.setGameTitle(req.body.title);
+    res.status(200).json({ message: `Game title set to '${req.body.title}'.` });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
 
-app.post('/players', (req, res) => {
+app.post('/:gameId/players', (req, res) => {
   try {
-    const { displayName } = req.body;
-    const player = game.addPlayer(displayName);
-    game.printGameState();
+    const game = games.get(req.params.gameId);
+    if (!game) throw new Error('Game not found.');
+    const player = game.addPlayer(req.body.displayName);
     res.status(201).json(player);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
 
-app.post('/words', (req, res) => {
+app.post('/:gameId/words', (req, res) => {
   try {
-    const { word } = req.body;
-    game.addWord(word);
-    game.printGameState();
-    res.status(201).json({ message: `Word '${word}' added.` });
+    const game = games.get(req.params.gameId);
+    if (!game) throw new Error('Game not found.');
+    game.addWord(req.body.word);
+    res.status(201).json({ message: `Word '${req.body.word}' added.` });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
 
-app.post('/start', (req, res) => {
+app.post('/:gameId/start', (req, res) => {
   try {
+    const game = games.get(req.params.gameId);
+    if (!game) throw new Error('Game not found.');
     game.startGame();
-    game.printGameState();
     res.status(200).json({ message: 'Game started!' });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
 
-app.post('/guess', (req, res) => {
+
+app.post('/:gameId/guess', (req, res) => {
   try {
-    const { playerId, guessedWord } = req.body;
-    game.submitWord(playerId, guessedWord);
-    game.printGameState();
+    const game = games.get(req.params.gameId);
+    if (!game) throw new Error('Game not found.');
+    game.submitWord(req.body.playerId, req.body.guessedWord);
     res.status(200).json(game.getCurrentState());
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
 
-app.get('/state', (req, res) => {
+app.get('/:gameId/state', (req, res) => {
+  const game = games.get(req.params.gameId);
+  if (!game) return res.status(404).json({ error: 'Game not found.' });
   res.status(200).json(game.getCurrentState());
 });
 
-app.get('/', (req, res) => {
-  const playerName = req.query.playerName;
-  if (playerName) {
+// View all games
+app.get('/games', (req, res) => {
+  const playerName = req.query.playerName || 'Guest';
+  const gameList = Array.from(games.values()).map(game => ({
+    id: game.gameId,
+    title: game.gameTitle || 'Untitled Game',
+  }));
+  console.log('gggggggg', gameList);
+
+  res.render('view_games', { games: gameList, playerName });
+});
+
+// Redirect to game page
+app.get('/game', (req, res) => {
+  const { gameId, playerName } = req.query;
+  const game = games.get(gameId);
+
+  if (!game) {
+    return res.status(404).json({ error: 'Game not found.' });
+  }
+
+  game.addPlayer(playerName);
+  res.redirect(`/game/${gameId}?playerName=${encodeURIComponent(playerName)}`);
+});
+app.get('/game/:gameId', (req, res) => {
+  const gameId = req.params.gameId || null;
+  const playerName = req.query.playerName || null;
+
+  if (!gameId || !games.has(gameId)) {
+    return res.status(404).json({ error: 'Game not found.' });
+  }
+
+  const game = games.get(gameId);
+
+  if (playerName && !game.players.some(p => p.name === playerName)) {
     game.addPlayer(playerName);
   }
-  game.printGameState();
-  res.render('game', { state: game.getCurrentState() });
+
+  const state = game.getCurrentState();
+  console.log('state', state);
+  res.render('game', { state });
 });
+
 
 app.listen(port, () => {
   console.log(`Word game server is running on http://localhost:${port}`);
