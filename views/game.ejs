@@ -3,65 +3,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= state.gameTitle %></title>
+  <title><%= state.gameTitle || 'Word Game' %></title>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
       margin: 20px;
+      background: linear-gradient(to bottom, #004c99, #66b3ff);
+      color: white;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      background: #00264d;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+    .guess-box {
+      margin: 20px 0;
+    }
+    .word-display {
+      font-size: 36px;
+      margin: 20px 0;
     }
     .player {
       margin: 10px 0;
     }
-    .game-controls {
-      margin: 20px;
+    button {
+      background-color: #0066cc;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #004080;
     }
   </style>
 </head>
 <body>
-  <h1><%= state.gameTitle || 'Word Game' %></h1>
-  <h2>Current Game State: <%= state.currentState %></h2>
+  <div class="container">
+    <h1><%= state.gameTitle || 'Word Game' %></h1>
+    <h2>Current Game State: <%= state.currentState %></h2>
 
-  <div class="game-controls" id="game-controls">
+    <% if (state.currentState === 'GAME_IN_PROGRESS') { %>
+      <div class="word-display">
+        <% state.words.forEach((word, index) => { %>
+          <% if (index < state.currentWordIndex) { %>
+            <span><%= word %> </span>
+          <% } else if (index === state.currentWordIndex) { %>
+            <span><%= word.charAt(0) + '_'.repeat(word.length - 1) %> </span>
+          <% } else { %>
+            <span>_ </span>
+          <% } %>
+        <% }); %>
+      </div>
+      <div class="guess-box">
+        <input type="text" id="guess-word" placeholder="Your Guess">
+        <button onclick="submitGuess()">Submit Guess</button>
+      </div>
+    <% } %>
+
     <% if (state.currentState === 'WAITING_FOR_PLAYERS') { %>
-      <h3>Start the Game</h3>
-      <input type="text" id="game-title" placeholder="Game Title">
-      <input type="text" id="game-word" placeholder="Add Word">
-      <button onclick="setGameTitle()">Set Title</button>
-      <button onclick="addWord()">Add Word</button>
-      <button onclick="startGame()">Start Game</button>
+      <div class="game-controls">
+        <input type="text" id="game-title" placeholder="Set Game Title">
+        <input type="text" id="game-word" placeholder="Add Word">
+        <button onclick="setGameTitle()">Set Title</button>
+        <button onclick="addWord()">Add Word</button>
+        <button onclick="startGame()">Start Game</button>
+      </div>
+    <% } %>
+
+    <h3>Players</h3>
+    <ul>
+      <% state.players.forEach(player => { %>
+        <li class="player">
+          <strong><%= player.displayName %></strong> - Score: <%= player.score %>
+        </li>
+      <% }); %>
+    </ul>
+
+    <% if (state.lastPlayed) { %>
+      <h3>Last Played:</h3>
+      <p>
+        <strong>Player:</strong> <%= state.lastPlayed.displayName %> <br>
+        <strong>Guess:</strong> <%= state.lastPlayed.guessedWord %> <br>
+        <strong>Result:</strong> <%= state.lastPlayed.correct ? 'Correct' : 'Incorrect' %>
+      </p>
     <% } %>
   </div>
-
-  <h3>Players</h3>
-  <ul id="player-list">
-    <% state.players.forEach(player => { %>
-      <li class="player">
-        <strong><%= player.displayName %></strong> - Score: <%= player.score %>
-      </li>
-    <% }); %>
-  </ul>
-
-  <h3>Make a Guess</h3>
-  <input type="text" id="guess-word" placeholder="Your Guess">
-  <button onclick="submitGuess()">Submit</button>
-
-  <h3>Remaining Words: <%= state.remainingWords %></h3>
-  <h3>Guessed Words:</h3>
-  <ul>
-    <% state.guessedWords.forEach(word => { %>
-      <li><%= word %></li>
-    <% }); %>
-  </ul>
-
-  <% if (state.lastPlayed) { %>
-    <h3>Last Played:</h3>
-    <p>
-      <strong>Player:</strong> <%= state.lastPlayed.displayName %> <br>
-      <strong>Guess:</strong> <%= state.lastPlayed.guessedWord %> <br>
-      <strong>Result:</strong> <%= state.lastPlayed.correct ? 'Correct' : 'Incorrect' %>
-    </p>
-  <% } %>
 
   <script>
     function xhrRequest(endpoint, method, data) {
