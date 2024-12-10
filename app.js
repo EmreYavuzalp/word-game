@@ -20,6 +20,7 @@ class WordGameFSM {
     this.words = [];
     this.currentWordIndex = 0;
     this.gameTitle = '';
+    this.lastPlayed = null; // To store the last played action
   }
 
   // Set the game title
@@ -36,7 +37,7 @@ class WordGameFSM {
       throw new Error('Cannot add players once the game has started.');
     }
 
-    const player = { id: uuidv4(), displayName };
+    const player = { id: uuidv4(), displayName, score: 0 };
     this.players.push(player);
     return player;
   }
@@ -69,8 +70,23 @@ class WordGameFSM {
       throw new Error('Game is not in progress.');
     }
 
+    const player = this.players.find((p) => p.id === playerId);
+    if (!player) {
+      throw new Error('Player not found.');
+    }
+
     const currentWord = this.words[this.currentWordIndex];
-    if (guessedWord === currentWord) {
+    const isCorrect = guessedWord === currentWord;
+
+    this.lastPlayed = {
+      playerId: player.id,
+      displayName: player.displayName,
+      guessedWord,
+      correct: isCorrect,
+    };
+
+    if (isCorrect) {
+      player.score += 10;
       console.log(`Player ${playerId} guessed the correct word: ${guessedWord}`);
       this.currentWordIndex++;
 
@@ -87,10 +103,15 @@ class WordGameFSM {
   getCurrentState() {
     return {
       currentState: this.currentState,
-      players: this.players,
+      players: this.players.map((p) => ({
+        id: p.id,
+        displayName: p.displayName,
+        score: p.score,
+      })),
       remainingWords: this.words.slice(this.currentWordIndex).length,
       guessedWords: this.words.slice(0, this.currentWordIndex),
       gameTitle: this.gameTitle,
+      lastPlayed: this.lastPlayed,
     };
   }
 
