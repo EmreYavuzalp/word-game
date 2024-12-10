@@ -34,10 +34,6 @@ class WordGameFSM {
   }
 
   addPlayer(displayName) {
-    if (this.currentState !== this.states.WAITING_FOR_PLAYERS) {
-      throw new Error('Cannot add players once the game has started.');
-    }
-    
     let player = this.players.find(p => p.displayName === displayName);
     if (!player) {
       player = { id: uuidv4(), displayName, score: 0 };
