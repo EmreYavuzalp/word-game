@@ -67,12 +67,31 @@
       right: 20px;
       width: 250px;
     }
+    .winner {
+      font-size: 40px;
+      font-weight: bold;
+      color: gold;
+    }
+    .loser {
+      font-size: 20px;
+      color: #bbb;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1><%= state.gameTitle || 'Word Game' %></h1>
     <h2>Current Game State: <%= state.currentState %></h2>
+
+    <% if (state.currentState === 'WAITING_FOR_PLAYERS') { %>
+      <div class="game-controls">
+        <input type="text" id="game-title" placeholder="Set Game Title">
+        <input type="text" id="game-word" placeholder="Add Word">
+        <button onclick="setGameTitle()">Set Title</button>
+        <button onclick="addWord()">Add Word</button>
+        <button onclick="startGame()">Start Game</button>
+      </div>
+    <% } %>
 
     <% if (state.currentState === 'GAME_IN_PROGRESS') { %>
       <div class="word-display">
@@ -87,19 +106,19 @@
         <% }); %>
       </div>
       <div class="guess-box">
-        <input type="text" id="guess-word" placeholder="Your Guess">
+        <input type="text" id="guess-word" placeholder="Your Guess" onkeypress="handleEnter(event)">
         <button onclick="submitGuess()">Submit Guess</button>
       </div>
     <% } %>
 
-    <% if (state.currentState === 'WAITING_FOR_PLAYERS') { %>
-      <div class="game-controls">
-        <input type="text" id="game-title" placeholder="Set Game Title">
-        <input type="text" id="game-word" placeholder="Add Word">
-        <button onclick="setGameTitle()">Set Title</button>
-        <button onclick="addWord()">Add Word</button>
-        <button onclick="startGame()">Start Game</button>
-      </div>
+    <% if (state.currentState === 'GAME_COMPLETED') { %>
+      <h2>Game Over!</h2>
+      <% const winner = state.players.reduce((a, b) => a.score > b.score ? a : b); %>
+      <div class="winner">Winner: <%= winner.displayName %> (Score: <%= winner.score %>)</div>
+      <h3>Other Players:</h3>
+      <% state.players.filter(p => p.id !== winner.id).forEach(player => { %>
+        <div class="loser"><%= player.displayName %>: <%= player.score %></div>
+      <% }); %>
     <% } %>
 
     <div class="players-container">
@@ -146,6 +165,12 @@
 
     function startGame() {
       xhrRequest('/start', 'POST', {});
+    }
+
+    function handleEnter(event) {
+      if (event.key === 'Enter') {
+        submitGuess();
+      }
     }
 
     function submitGuess() {
