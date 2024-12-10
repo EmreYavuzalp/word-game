@@ -1,7 +1,8 @@
-// Import required modules (if any, e.g., uuid for generating unique player IDs)
+// Import required modules
 const { v4: uuidv4 } = require('uuid');
 const express = require('express');
 const path = require('path');
+
 const app = express();
 const port = 3000;
 
@@ -24,6 +25,7 @@ class WordGameFSM {
     this.currentWordIndex = 0;
     this.gameTitle = '';
     this.lastPlayed = null;
+    this.guessedWords = [];
   }
 
   setGameTitle(title) {
@@ -59,6 +61,7 @@ class WordGameFSM {
 
     this.currentState = this.states.GAME_IN_PROGRESS;
     this.currentWordIndex = 0;
+    this.guessedWords = [];
   }
 
   submitWord(playerId, guessedWord) {
@@ -66,7 +69,7 @@ class WordGameFSM {
       throw new Error('Game is not in progress.');
     }
 
-    const player = this.players.find((p) => p.id === playerId);
+    const player = this.players.find(p => p.id === playerId);
     if (!player) {
       throw new Error('Player not found.');
     }
@@ -83,6 +86,7 @@ class WordGameFSM {
 
     if (isCorrect) {
       player.score += 10;
+      this.guessedWords.push({ word: guessedWord, guesser: player.displayName });
       this.currentWordIndex++;
 
       if (this.currentWordIndex >= this.words.length) {
@@ -94,26 +98,27 @@ class WordGameFSM {
   getCurrentState() {
     return {
       currentState: this.currentState,
-      players: this.players.map((p) => ({
+      players: this.players.map(p => ({
         id: p.id,
         displayName: p.displayName,
         score: p.score,
       })),
       remainingWords: this.words.slice(this.currentWordIndex).length,
-      guessedWords: this.words.slice(0, this.currentWordIndex),
+      guessedWords: this.guessedWords,
       gameTitle: this.gameTitle,
       lastPlayed: this.lastPlayed,
-      words: this.words
+      words: this.words,
     };
   }
 
   printGameState() {
-    console.log("Current Game State:", this.getCurrentState());
+    console.log('Current Game State:', this.getCurrentState());
   }
 }
 
 const game = new WordGameFSM();
 
+// API Endpoints
 app.post('/game-title', (req, res) => {
   try {
     const { title } = req.body;

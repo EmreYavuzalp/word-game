@@ -25,6 +25,10 @@
       margin: 20px 0;
       line-height: 2;
     }
+    .guesser {
+      font-size: 14px;
+      color: #ccc;
+    }
     .guess-box {
       margin: 20px 0;
     }
@@ -72,12 +76,14 @@
 
     <% if (state.currentState === 'GAME_IN_PROGRESS') { %>
       <div class="word-display">
-        <% state.words.forEach((word) => { %>
-          <% if (state.guessedWords.includes(word)) { %>
-            <div><%= word %></div>
-          <% } else { %>
-            <div><%= word.charAt(0) + '_'.repeat(word.length - 1) %></div>
-          <% } %>
+        <% state.guessedWords.forEach((entry) => { %>
+          <div>
+            <%= entry.word %>
+            <span class="guesser">(Guessed by: <%= entry.guesser %>)</span>
+          </div>
+        <% }); %>
+        <% state.words.slice(state.guessedWords.length).forEach((word) => { %>
+          <div><%= word.charAt(0) + '_'.repeat(word.length - 1) %></div>
         <% }); %>
       </div>
       <div class="guess-box">
