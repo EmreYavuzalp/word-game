@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= state.gameTitle %></title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    .player {
+      margin: 10px 0;
+    }
+    .game-controls {
+      margin: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1><%= state.gameTitle || 'Word Game' %></h1>
+  <h2>Current Game State: <%= state.currentState %></h2>
+
+  <div class="game-controls" id="game-controls">
+    <% if (state.currentState === 'WAITING_FOR_PLAYERS') { %>
+      <h3>Start the Game</h3>
+      <input type="text" id="game-title" placeholder="Game Title">
+      <input type="text" id="game-word" placeholder="Add Word">
+      <button onclick="setGameTitle()">Set Title</button>
+      <button onclick="addWord()">Add Word</button>
+      <button onclick="startGame()">Start Game</button>
+    <% } %>
+  </div>
+
+  <h3>Players</h3>
+  <ul id="player-list">
+    <% state.players.forEach(player => { %>
+      <li class="player">
+        <strong><%= player.displayName %></strong> - Score: <%= player.score %>
+      </li>
+    <% }); %>
+  </ul>
+
+  <h3>Make a Guess</h3>
+  <input type="text" id="guess-word" placeholder="Your Guess">
+  <button onclick="submitGuess()">Submit</button>
+
+  <h3>Remaining Words: <%= state.remainingWords %></h3>
+  <h3>Guessed Words:</h3>
+  <ul>
+    <% state.guessedWords.forEach(word => { %>
+      <li><%= word %></li>
+    <% }); %>
+  </ul>
+
+  <% if (state.lastPlayed) { %>
+    <h3>Last Played:</h3>
+    <p>
+      <strong>Player:</strong> <%= state.lastPlayed.displayName %> <br>
+      <strong>Guess:</strong> <%= state.lastPlayed.guessedWord %> <br>
+      <strong>Result:</strong> <%= state.lastPlayed.correct ? 'Correct' : 'Incorrect' %>
+    </p>
+  <% } %>
+
+  <script>
+    function xhrRequest(endpoint, method, data) {
+      fetch(endpoint, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      }).then(res => res.json()).then(data => window.location.reload());
+    }
+
+    function setGameTitle() {
+      const title = document.getElementById('game-title').value;
+      xhrRequest('/game-title', 'POST', { title });
+    }
+
+    function addWord() {
+      const word = document.getElementById('game-word').value;
+      xhrRequest('/words', 'POST', { word });
+    }
+
+    function startGame() {
+      xhrRequest('/start', 'POST', {});
+    }
+
+    function submitGuess() {
+      const guessedWord = document.getElementById('guess-word').value;
+      const playerName = new URLSearchParams(window.location.search).get('playerName');
+      fetch('/players', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ displayName: playerName })
+      }).then(res => res.json()).then(player => {
+        xhrRequest('/guess', 'POST', {
+          playerId: player.id, guessedWord
+        });
+      });
+    }
+  </script>
+</body>
+</html>

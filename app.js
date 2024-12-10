@@ -1,10 +1,13 @@
 // Import required modules (if any, e.g., uuid for generating unique player IDs)
 const { v4: uuidv4 } = require('uuid');
 const express = require('express');
+const path = require('path');
 const app = express();
 const port = 3000;
 
 app.use(express.json());
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 
 // Define the finite state machine class
 class WordGameFSM {
@@ -20,10 +23,9 @@ class WordGameFSM {
     this.words = [];
     this.currentWordIndex = 0;
     this.gameTitle = '';
-    this.lastPlayed = null; // To store the last played action
+    this.lastPlayed = null;
   }
 
-  // Set the game title
   setGameTitle(title) {
     if (this.currentState !== this.states.WAITING_FOR_PLAYERS) {
       throw new Error('Cannot set game title once the game has started.');
@@ -31,18 +33,19 @@ class WordGameFSM {
     this.gameTitle = title;
   }
 
-  // Add a player to the game
   addPlayer(displayName) {
     if (this.currentState !== this.states.WAITING_FOR_PLAYERS) {
       throw new Error('Cannot add players once the game has started.');
     }
-
-    const player = { id: uuidv4(), displayName, score: 0 };
-    this.players.push(player);
+    
+    let player = this.players.find(p => p.displayName === displayName);
+    if (!player) {
+      player = { id: uuidv4(), displayName, score: 0 };
+      this.players.push(player);
+    }
     return player;
   }
 
-  // Add a word to the game
   addWord(word) {
     if (this.currentState !== this.states.WAITING_FOR_PLAYERS) {
       throw new Error('Cannot add words once the game has started.');
@@ -50,7 +53,6 @@ class WordGameFSM {
     this.words.push(word);
   }
 
-  // Start the game
   startGame() {
     if (this.players.length === 0) {
       throw new Error('At least one player is required to start the game.');
@@ -61,10 +63,8 @@ class WordGameFSM {
 
     this.currentState = this.states.GAME_IN_PROGRESS;
     this.currentWordIndex = 0;
-    console.log('Game started! First word:', this.words[this.currentWordIndex]);
   }
 
-  // Submit a word guess
   submitWord(playerId, guessedWord) {
     if (this.currentState !== this.states.GAME_IN_PROGRESS) {
       throw new Error('Game is not in progress.');
@@ -87,19 +87,14 @@ class WordGameFSM {
 
     if (isCorrect) {
       player.score += 10;
-      console.log(`Player ${playerId} guessed the correct word: ${guessedWord}`);
       this.currentWordIndex++;
 
       if (this.currentWordIndex >= this.words.length) {
         this.currentState = this.states.GAME_COMPLETED;
-        console.log('Game completed! All words have been guessed.');
       }
-    } else {
-      console.log(`Player ${playerId} guessed incorrectly: ${guessedWord}`);
     }
   }
 
-  // Get the current state
   getCurrentState() {
     return {
       currentState: this.currentState,
@@ -114,26 +109,10 @@ class WordGameFSM {
       lastPlayed: this.lastPlayed,
     };
   }
-
-  // List players
-  listPlayers() {
-    return this.players;
-  }
-
-  // Get the current word
-  getCurrentWord() {
-    if (this.currentState !== this.states.GAME_IN_PROGRESS) {
-      throw new Error('Game is not in progress.');
-    }
-    return this.words[this.currentWordIndex];
-  }
 }
 
 const game = new WordGameFSM();
 
-// REST API Endpoints
-
-// Set the game title
 app.post('/game-title', (req, res) => {
   try {
     const { title } = req.body;
@@ -144,7 +123,6 @@ app.post('/game-title', (req, res) => {
   }
 });
 
-// Add a player
 app.post('/players', (req, res) => {
   try {
     const { displayName } = req.body;
@@ -155,7 +133,6 @@ app.post('/players', (req, res) => {
   }
 });
 
-// Add a word
 app.post('/words', (req, res) => {
   try {
     const { word } = req.body;
@@ -166,7 +143,6 @@ app.post('/words', (req, res) => {
   }
 });
 
-// Start the game
 app.post('/start', (req, res) => {
   try {
     game.startGame();
@@ -176,7 +152,6 @@ app.post('/start', (req, res) => {
   }
 });
 
-// Submit a guess
 app.post('/guess', (req, res) => {
   try {
     const { playerId, guessedWord } = req.body;
@@ -187,14 +162,16 @@ app.post('/guess', (req, res) => {
   }
 });
 
-// Get the current state
 app.get('/state', (req, res) => {
   res.status(200).json(game.getCurrentState());
 });
 
-// List players
-app.get('/players', (req, res) => {
-  res.status(200).json(game.listPlayers());
+app.get('/', (req, res) => {
+  const playerName = req.query.playerName;
+  if (playerName) {
+    game.addPlayer(playerName);
+  }
+  res.render('game', { state: game.getCurrentState() });
 });
 
 app.listen(port, () => {
