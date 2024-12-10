@@ -106,6 +106,10 @@ class WordGameFSM {
       words: this.words
     };
   }
+
+  printGameState() {
+    console.log("Current Game State:", this.getCurrentState());
+  }
 }
 
 const game = new WordGameFSM();
@@ -114,6 +118,7 @@ app.post('/game-title', (req, res) => {
   try {
     const { title } = req.body;
     game.setGameTitle(title);
+    game.printGameState();
     res.status(200).json({ message: `Game title set to '${title}'.` });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -124,6 +129,7 @@ app.post('/players', (req, res) => {
   try {
     const { displayName } = req.body;
     const player = game.addPlayer(displayName);
+    game.printGameState();
     res.status(201).json(player);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -134,6 +140,7 @@ app.post('/words', (req, res) => {
   try {
     const { word } = req.body;
     game.addWord(word);
+    game.printGameState();
     res.status(201).json({ message: `Word '${word}' added.` });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -143,6 +150,7 @@ app.post('/words', (req, res) => {
 app.post('/start', (req, res) => {
   try {
     game.startGame();
+    game.printGameState();
     res.status(200).json({ message: 'Game started!' });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -153,6 +161,7 @@ app.post('/guess', (req, res) => {
   try {
     const { playerId, guessedWord } = req.body;
     game.submitWord(playerId, guessedWord);
+    game.printGameState();
     res.status(200).json(game.getCurrentState());
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -168,6 +177,7 @@ app.get('/', (req, res) => {
   if (playerName) {
     game.addPlayer(playerName);
   }
+  game.printGameState();
   res.render('game', { state: game.getCurrentState() });
 });
 

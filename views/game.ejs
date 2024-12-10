@@ -26,6 +26,7 @@
     .word-display {
       font-size: 36px;
       margin: 20px 0;
+      line-height: 2;
     }
     .player {
       margin: 10px 0;
@@ -50,21 +51,16 @@
     <h2>Current Game State: <%= state.currentState %></h2>
 
     <% if (state.currentState === 'GAME_IN_PROGRESS') { %>
-        <div class="word-display">
-            <% if (state.words && state.words.length > 0) { %>
-              <% state.words.forEach((word, index) => { %>
-                <% if (index < state.currentWordIndex) { %>
-                  <span><%= word %> </span>
-                <% } else if (index === state.currentWordIndex) { %>
-                  <span><%= word.charAt(0) + '_'.repeat(word.length - 1) %> </span>
-                <% } else { %>
-                  <span>_ </span>
-                <% } %>
-              <% }); %>
+      <div class="word-display">
+        <% state.words.forEach((word) => { %>
+            <% if (state.guessedWords.includes(word)) { %>
+              <div><%= word %></div>
             <% } else { %>
-              <span>No words available.</span>
+              <div><%= word.charAt(0) + '_'.repeat(word.length - 1) %></div>
             <% } %>
-          </div>          
+          <% }); %>
+          
+      </div>
       <div class="guess-box">
         <input type="text" id="guess-word" placeholder="Your Guess">
         <button onclick="submitGuess()">Submit Guess</button>
