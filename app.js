@@ -1,5 +1,10 @@
 // Import required modules (if any, e.g., uuid for generating unique player IDs)
 const { v4: uuidv4 } = require('uuid');
+const express = require('express');
+const app = express();
+const port = 3000;
+
+app.use(express.json());
 
 // Define the finite state machine class
 class WordGameFSM {
@@ -79,18 +84,57 @@ class WordGameFSM {
   }
 }
 
-// Example usage
 const words = ['apple', 'banana', 'cherry', 'date', 'elderberry'];
 const game = new WordGameFSM(words);
 
-// Add players
-game.addPlayer('Alice');
-game.addPlayer('Bob');
+// REST API Endpoints
+
+// Add a player
+app.post('/players', (req, res) => {
+  try {
+    const { displayName } = req.body;
+    const player = game.addPlayer(displayName);
+    res.status(201).json(player);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 
 // Start the game
-game.startGame();
+app.post('/start', (req, res) => {
+  try {
+    game.startGame();
+    res.status(200).json({ message: 'Game started!', firstWord: game.getCurrentWord() });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 
-// Submit guesses
-game.submitWord(game.players[0].id, 'apple');
-game.submitWord(game.players[1].id, 'orange');
-game.submitWord(game.players[0].id, 'banana');
+// Submit a guess
+app.post('/guess', (req, res) => {
+  try {
+    const { playerId, guessedWord } = req.body;
+    game.submitWord(playerId, guessedWord);
+    if (game.getCurrentState() === game.states.GAME_COMPLETED) {
+      res.status(200).json({ message: 'Game completed! All words< guessed.' });
+    } else {
+      res.status(200).json({ message: 'Correct guess!', nextWord: game.getCurrentWord() });
+    }
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Get the current state
+app.get('/state', (req, res) => {
+  res.status(200).json({ state: game.getCurrentState() });
+});
+
+// List players
+app.get('/players', (req, res) => {
+  res.status(200).json(game.listPlayers());
+});
+
+app.listen(port, () => {
+  console.log(`Word game server is running on http://localhost:${port}`);
+});
