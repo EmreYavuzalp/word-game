@@ -68,8 +68,6 @@ class WordGameFSM {
       if (this.currentWordIndex >= this.words.length) {
         this.currentState = this.states.GAME_COMPLETED;
         console.log('Game completed! All words have been guessed.');
-      } else {
-        console.log('Next word:', this.words[this.currentWordIndex]);
       }
     } else {
       console.log(`Player ${playerId} guessed incorrectly: ${guessedWord}`);
@@ -125,7 +123,7 @@ app.post('/words', (req, res) => {
 app.post('/start', (req, res) => {
   try {
     game.startGame();
-    res.status(200).json({ message: 'Game started!', firstWord: game.getCurrentWord() });
+    res.status(200).json({ message: 'Game started!' });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -139,7 +137,7 @@ app.post('/guess', (req, res) => {
     if (game.getCurrentState() === game.states.GAME_COMPLETED) {
       res.status(200).json({ message: 'Game completed! All words guessed.' });
     } else {
-      res.status(200).json({ message: 'Correct guess!', nextWord: game.getCurrentWord() });
+      res.status(200).json({ message: 'Correct guess!' });
     }
   } catch (error) {
     res.status(400).json({ error: error.message });
