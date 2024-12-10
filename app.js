@@ -8,7 +8,7 @@ app.use(express.json());
 
 // Define the finite state machine class
 class WordGameFSM {
-  constructor(words) {
+  constructor() {
     this.states = {
       WAITING_FOR_PLAYERS: 'WAITING_FOR_PLAYERS',
       GAME_IN_PROGRESS: 'GAME_IN_PROGRESS',
@@ -17,7 +17,7 @@ class WordGameFSM {
 
     this.currentState = this.states.WAITING_FOR_PLAYERS;
     this.players = [];
-    this.words = words;
+    this.words = [];
     this.currentWordIndex = 0;
   }
 
@@ -32,10 +32,21 @@ class WordGameFSM {
     return player;
   }
 
+  // Add a word to the game
+  addWord(word) {
+    if (this.currentState !== this.states.WAITING_FOR_PLAYERS) {
+      throw new Error('Cannot add words once the game has started.');
+    }
+    this.words.push(word);
+  }
+
   // Start the game
   startGame() {
     if (this.players.length === 0) {
       throw new Error('At least one player is required to start the game.');
+    }
+    if (this.words.length === 0) {
+      throw new Error('At least one word is required to start the game.');
     }
 
     this.currentState = this.states.GAME_IN_PROGRESS;
@@ -84,8 +95,7 @@ class WordGameFSM {
   }
 }
 
-const words = ['apple', 'banana', 'cherry', 'date', 'elderberry'];
-const game = new WordGameFSM(words);
+const game = new WordGameFSM();
 
 // REST API Endpoints
 
@@ -95,6 +105,17 @@ app.post('/players', (req, res) => {
     const { displayName } = req.body;
     const player = game.addPlayer(displayName);
     res.status(201).json(player);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Add a word
+app.post('/words', (req, res) => {
+  try {
+    const { word } = req.body;
+    game.addWord(word);
+    res.status(201).json({ message: `Word '${word}' added.` });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -116,7 +137,7 @@ app.post('/guess', (req, res) => {
     const { playerId, guessedWord } = req.body;
     game.submitWord(playerId, guessedWord);
     if (game.getCurrentState() === game.states.GAME_COMPLETED) {
-      res.status(200).json({ message: 'Game completed! All words< guessed.' });
+      res.status(200).json({ message: 'Game completed! All words guessed.' });
     } else {
       res.status(200).json({ message: 'Correct guess!', nextWord: game.getCurrentWord() });
     }
