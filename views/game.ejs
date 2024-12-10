@@ -20,16 +20,13 @@
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     }
-    .guess-box {
-      margin: 20px 0;
-    }
     .word-display {
       font-size: 36px;
       margin: 20px 0;
       line-height: 2;
     }
-    .player {
-      margin: 10px 0;
+    .guess-box {
+      margin: 20px 0;
     }
     button {
       background-color: #0066cc;
@@ -43,6 +40,29 @@
     button:hover {
       background-color: #004080;
     }
+    .card {
+      background: #004080;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 5px;
+      color: white;
+      text-align: left;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    }
+    .players-container {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .last-guess-card {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 250px;
+    }
   </style>
 </head>
 <body>
@@ -53,13 +73,12 @@
     <% if (state.currentState === 'GAME_IN_PROGRESS') { %>
       <div class="word-display">
         <% state.words.forEach((word) => { %>
-            <% if (state.guessedWords.includes(word)) { %>
-              <div><%= word %></div>
-            <% } else { %>
-              <div><%= word.charAt(0) + '_'.repeat(word.length - 1) %></div>
-            <% } %>
-          <% }); %>
-          
+          <% if (state.guessedWords.includes(word)) { %>
+            <div><%= word %></div>
+          <% } else { %>
+            <div><%= word.charAt(0) + '_'.repeat(word.length - 1) %></div>
+          <% } %>
+        <% }); %>
       </div>
       <div class="guess-box">
         <input type="text" id="guess-word" placeholder="Your Guess">
@@ -77,22 +96,24 @@
       </div>
     <% } %>
 
-    <h3>Players</h3>
-    <ul>
+    <div class="players-container">
       <% state.players.forEach(player => { %>
-        <li class="player">
-          <strong><%= player.displayName %></strong> - Score: <%= player.score %>
-        </li>
+        <div class="card">
+          <strong><%= player.displayName %></strong><br>
+          Score: <%= player.score %>
+        </div>
       <% }); %>
-    </ul>
+    </div>
 
     <% if (state.lastPlayed) { %>
-      <h3>Last Played:</h3>
-      <p>
-        <strong>Player:</strong> <%= state.lastPlayed.displayName %> <br>
-        <strong>Guess:</strong> <%= state.lastPlayed.guessedWord %> <br>
-        <strong>Result:</strong> <%= state.lastPlayed.correct ? 'Correct' : 'Incorrect' %>
-      </p>
+      <div class="card last-guess-card">
+        <h3>Last Guess</h3>
+        <p>
+          <strong>Player:</strong> <%= state.lastPlayed.displayName %><br>
+          <strong>Guess:</strong> <%= state.lastPlayed.guessedWord %><br>
+          <strong>Result:</strong> <%= state.lastPlayed.correct ? 'Correct' : 'Incorrect' %>
+        </p>
+      </div>
     <% } %>
   </div>
 
@@ -104,7 +125,7 @@
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(data)
-      }).then(res => res.json()).then(data => window.location.reload());
+      }).then(res => res.json()).then(() => window.location.reload());
     }
 
     function setGameTitle() {
