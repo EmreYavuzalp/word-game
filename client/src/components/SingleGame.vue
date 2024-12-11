@@ -2,7 +2,7 @@
   <div class="container">
     <h1>{{ state.gameTitle || 'Word Game' }}</h1>
 
-    <div v-if="state.currentState === 'WAITING_FOR_PLAYERS'" class="game-controls">
+    <div v-if="state.currentState === 'WAITING_FOR_PLAYERS' && !spectatorMode" class="game-controls">
       <input type="text" v-model="gameTitle" placeholder="Set Game Title" />
       <input type="text" v-model="newWord" placeholder="Add Word" />
       <button @click="setGameTitle">Set Title</button>
@@ -19,7 +19,7 @@
       </div>
     </div>
 
-    <div v-if="state.currentState === 'GAME_IN_PROGRESS'" class="guess-box">
+    <div v-if="state.currentState === 'GAME_IN_PROGRESS' && !spectatorMode" class="guess-box">
       <input type="text" v-model="guess" @keypress.enter="submitGuess" placeholder="Your Guess" />
       <button @click="submitGuess">Submit Guess</button>
     </div>
@@ -60,6 +60,7 @@ export default {
       state: {},
       gameId: null,
       playerName: null,
+      spectatorMode: new URLSearchParams(window.location.search).get('spectatorMode') === 'true',
       gameTitle: '',
       newWord: '',
       guess: '',
@@ -77,10 +78,7 @@ export default {
   methods: {
     fetchState() {
       fetch(`/api/${this.gameId}/state`)
-        .then((res) => {
-          if (!res.ok) throw new Error('Failed to fetch game state');
-          return res.json();
-        })
+        .then((res) => res.json())
         .then((data) => {
           this.state = data;
           this.guessedWords = this.state.guessedWords.reduce((acc, word) => {
@@ -88,28 +86,21 @@ export default {
             return acc;
           }, {});
         })
-        .catch((error) => {
-          console.error('Error fetching game state:', error);
-        });
+        .catch((error) => console.error('Error fetching game state:', error));
     },
     addPlayer() {
-      fetch(`/api/${this.gameId}/players`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ displayName: this.playerName }),
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error("Failed to add player");
-          return res.json();
+      if (!this.spectatorMode) {
+        fetch(`/api/${this.gameId}/players`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ displayName: this.playerName }),
         })
-        .then(() => {
-          this.fetchState();
-        })
-        .catch((error) => {
-          console.error("Error adding player:", error);
-        });
+          .then((res) => res.json())
+          .then(() => this.fetchState())
+          .catch((error) => console.error("Error adding player:", error));
+      }
     },
     xhrRequest(endpoint, method, data) {
       fetch(`/api/${this.gameId}${endpoint}`, {
@@ -143,7 +134,8 @@ export default {
     const urlParams = new URLSearchParams(window.location.search);
     this.gameId = this.$route.params.gameId;
     this.playerName = urlParams.get("playerName");
-    this.addPlayer(); // Add player upon entering the page
+    this.spectatorMode = urlParams.get("spectatorMode") === "true";
+    this.addPlayer();
     this.fetchState();
   },
 };
