@@ -22,8 +22,6 @@
 
     <div id="qr-code-container" style="margin-top: 20px;"></div>
   </div>
-
-  
 </template>
 
 <script>
@@ -36,6 +34,7 @@ export default {
       playerName: new URLSearchParams(window.location.search).get('playerName') || 'Guest',
       games: [],
       expertMode: new URLSearchParams(window.location.search).get('expertMode') === 'true',
+      gameUuid: ''
     };
   },
   methods: {
@@ -50,9 +49,22 @@ export default {
         console.error('Error fetching games:', error);
       }
     },
+    async checkGameExistence() {
+      if (!this.gameUuid) return;
+      if (!this.gameUuid) return;
+
+      try {
+        const response = await fetch(`/api/${this.gameUuid}/state`);
+        if (response.ok) {
+          window.location.href = `/game/${this.gameUuid}?spectatorMode=true`;
+        }
+      } catch (error) {
+        console.error('Error checking game existence:', error);
+      }
+    },
     async createRandomGame() {
-      const newGameId = this.generateUUID();
-      const url = `/api/create-random-game/${newGameId}`;
+      this.gameUuid = this.generateUUID();
+      const url = `/api/create-random-game/${this.gameUuid}`;
 
       try {
         const response = await fetch(url, {
@@ -84,8 +96,8 @@ export default {
   },
   mounted() {
     const qrCodeContainer = document.getElementById('qr-code-container');
-    const newGameId = this.generateUUID();
-    const landingPageUrl = `http://qr-games.onrender.com/create-game?gameId=${newGameId}&playerName=${encodeURIComponent(this.playerName)}`;
+    this.gameUuid = this.generateUUID();
+    const landingPageUrl = `http://qr-games.onrender.com/create-game?gameId=${this.gameUuid}&playerName=${encodeURIComponent(this.playerName)}`;
 
     QRCode.toCanvas(landingPageUrl, { width: 200 }, (error, canvas) => {
       if (error) console.error(error);
@@ -94,15 +106,17 @@ export default {
       const urlText = document.createElement('p');
       urlText.textContent = `Landing Page URL: ${landingPageUrl}`;
       urlText.style.color = 'white';
-      //if (this.expertMode) {
+      if (this.expertMode) {
         qrCodeContainer.appendChild(urlText);
-      //}
+      }
     });
 
     if (this.expertMode) {
       this.fetchGames();
       setInterval(this.fetchGames, 60000);
     }
+
+    setInterval(this.checkGameExistence, 5000);
   },
 };
 </script>
