@@ -50,10 +50,18 @@
         <strong>Result:</strong> {{ state.lastPlayed.correct ? 'Correct' : 'Incorrect' }}
       </p>
     </div>
+
+    <div v-if="gameId && spectatorMode" class="card qr-code-card">
+      <h3>Join the Game</h3>
+      <div id="qr-code-container" style="margin-top: 20px;"></div>
+      <p><strong>Link:</strong> <a :href="qrLink" target="_blank">{{ qrLink }}</a></p>
+    </div>
   </div>
 </template>
 
 <script>
+import QRCode from 'qrcode';
+
 export default {
   data() {
     return {
@@ -74,8 +82,30 @@ export default {
     otherPlayers() {
       return this.state.players.filter((p) => p.id !== this.winner.id);
     },
+    qrLink() {
+      return `http://qr-games.com/join-game/${this.gameId}`;
+    },
   },
   methods: {
+    async generateQRCode() {
+      this.$nextTick(() => {
+        const qrCodeContainer = document.getElementById('qr-code-container');
+        if (!qrCodeContainer || !this.gameId) {
+          console.error('QR code container not found or gameId is missing');
+          return;
+        }
+
+        try {
+          const landingPageUrl = this.qrLink;
+          QRCode.toCanvas(landingPageUrl, { width: 200 }, (error, canvas) => {
+            if (error) console.error('QR code generation failed:', error);
+            else qrCodeContainer.appendChild(canvas);
+          });
+        } catch (error) {
+          console.error('QR code generation failed:', error);
+        }
+      });
+    },
     fetchState() {
       fetch(`/api/${this.gameId}/state`)
         .then((res) => res.json())
@@ -137,6 +167,7 @@ export default {
     this.spectatorMode = urlParams.get("spectatorMode") === "true";
     this.addPlayer();
     this.fetchState();
+    this.generateQRCode();
   },
 };
 </script>
@@ -212,5 +243,18 @@ button:hover {
 .loser {
   font-size: 20px;
   color: #aaaaaa;
+}
+.card {
+  background: #223344;
+  padding: 12px 25px;
+  margin: 8px;
+  border-radius: 10px;
+  color: white;
+  text-align: left;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+}
+
+.qr-code-card {
+  text-align: center;
 }
 </style>
