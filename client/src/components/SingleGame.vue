@@ -1,0 +1,224 @@
+<template>
+  <div class="container">
+    <h1>{{ state.gameTitle || 'Word Game' }}</h1>
+
+    <div v-if="state.currentState === 'WAITING_FOR_PLAYERS'" class="game-controls">
+      <input type="text" v-model="gameTitle" placeholder="Set Game Title" />
+      <input type="text" v-model="newWord" placeholder="Add Word" />
+      <button @click="setGameTitle">Set Title</button>
+      <button @click="addWord">Add Word</button>
+      <button @click="startGame">Start Game</button>
+    </div>
+
+    <div v-if="state.currentState === 'GAME_IN_PROGRESS'" class="word-display">
+      <div v-for="word in state.words" :key="word">
+        <span>
+          {{ guessedWords[word] ? word : word.charAt(0) + '_'.repeat(word.length - 1) }}
+        </span>
+        <span v-if="guessedWords[word]" class="guesser">({{ guessedWords[word].guesser }})</span>
+      </div>
+    </div>
+
+    <div v-if="state.currentState === 'GAME_IN_PROGRESS'" class="guess-box">
+      <input type="text" v-model="guess" @keypress.enter="submitGuess" placeholder="Your Guess" />
+      <button @click="submitGuess">Submit Guess</button>
+    </div>
+
+    <div v-if="state.currentState === 'GAME_COMPLETED'">
+      <h2>Game Over!</h2>
+      <div class="winner">
+        Winner: {{ winner.displayName }} (Score: {{ winner.score }})
+      </div>
+      <h3>Other Players:</h3>
+      <div v-for="player in otherPlayers" :key="player.id" class="loser">
+        {{ player.displayName }}: {{ player.score }}
+      </div>
+    </div>
+
+    <div class="players-container">
+      <div v-for="player in state.players" :key="player.id" class="card">
+        <strong>{{ player.displayName }}</strong><br />
+        Score: {{ player.score }}
+      </div>
+    </div>
+
+    <div v-if="state.lastPlayed" class="card last-guess-card">
+      <h3>Last Guess</h3>
+      <p>
+        <strong>Player:</strong> {{ state.lastPlayed.displayName }}<br />
+        <strong>Guess:</strong> {{ state.lastPlayed.guessedWord }}<br />
+        <strong>Result:</strong> {{ state.lastPlayed.correct ? 'Correct' : 'Incorrect' }}
+      </p>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      state: {},
+      gameId: null,
+      playerName: null,
+      gameTitle: '',
+      newWord: '',
+      guess: '',
+      guessedWords: {},
+    };
+  },
+  computed: {
+    winner() {
+      return this.state.players.reduce((a, b) => (a.score > b.score ? a : b), {});
+    },
+    otherPlayers() {
+      return this.state.players.filter((p) => p.id !== this.winner.id);
+    },
+  },
+  methods: {
+    fetchState() {
+      fetch(`/api/${this.gameId}/state`)
+        .then((res) => {
+          if (!res.ok) throw new Error('Failed to fetch game state');
+          return res.json();
+        })
+        .then((data) => {
+          this.state = data;
+          this.guessedWords = this.state.guessedWords.reduce((acc, word) => {
+            acc[word.word] = word;
+            return acc;
+          }, {});
+        })
+        .catch((error) => {
+          console.error('Error fetching game state:', error);
+        });
+    },
+    addPlayer() {
+      fetch(`/api/${this.gameId}/players`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ displayName: this.playerName }),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to add player");
+          return res.json();
+        })
+        .then(() => {
+          this.fetchState();
+        })
+        .catch((error) => {
+          console.error("Error adding player:", error);
+        });
+    },
+    xhrRequest(endpoint, method, data) {
+      fetch(`/api/${this.gameId}${endpoint}`, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      })
+        .then((res) => res.json())
+        .then(() => this.fetchState());
+    },
+    setGameTitle() {
+      this.xhrRequest(`/game-title`, "POST", { title: this.gameTitle });
+    },
+    addWord() {
+      this.xhrRequest(`/words`, "POST", { word: this.newWord });
+    },
+    startGame() {
+      this.xhrRequest(`/start`, "POST", {});
+    },
+    submitGuess() {
+      this.xhrRequest("/guess", "POST", {
+        playerId: this.playerName,
+        guessedWord: this.guess,
+      });
+      this.guess = "";
+    },
+  },
+  mounted() {
+    const urlParams = new URLSearchParams(window.location.search);
+    this.gameId = this.$route.params.gameId;
+    this.playerName = urlParams.get("playerName");
+    this.addPlayer(); // Add player upon entering the page
+    this.fetchState();
+  },
+};
+</script>
+
+<style scoped>
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin: 20px;
+  background: linear-gradient(to bottom, #123456, #89abcd);
+  color: white;
+}
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 30px;
+  background: #112233;
+  border-radius: 15px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+}
+.word-display {
+  font-size: 38px;
+  margin: 25px 0;
+  line-height: 2;
+}
+.guesser {
+  font-size: 14px;
+  color: #dddddd;
+}
+.guess-box {
+  margin: 25px 0;
+}
+button {
+  background-color: #0055aa;
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  margin: 5px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+button:hover {
+  background-color: #003377;
+}
+.card {
+  background: #223344;
+  padding: 12px 25px;
+  margin: 8px;
+  border-radius: 10px;
+  color: white;
+  text-align: left;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+}
+.players-container {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.last-guess-card {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 260px;
+}
+.winner {
+  font-size: 42px;
+  font-weight: bold;
+  color: gold;
+}
+.loser {
+  font-size: 20px;
+  color: #aaaaaa;
+}
+</style>
