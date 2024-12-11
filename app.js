@@ -3,9 +3,11 @@ const { v4: uuidv4 } = require('uuid');
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+require('dotenv').config();
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
+const hostname = process.env.HOSTNAME || 'localhost';
 
 app.use(express.json());
 app.set('view engine', 'ejs');
@@ -133,6 +135,7 @@ app.post('/create-random-game/:gameId', (req, res) => {
     res.status(201).json({ gameId, gameTitle, words, message: 'Random game created and started successfully.' });
   });
 });
+
 app.post('/:gameId/game-title', (req, res) => {
   try {
     const game = games.get(req.params.gameId);
@@ -245,5 +248,5 @@ app.get('/create-game', (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Word game server is running on http://localhost:${port}`);
+  console.log(`Word game server is running on http://${hostname}:${port}`);
 });
