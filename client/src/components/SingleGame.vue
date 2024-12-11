@@ -51,7 +51,7 @@
       </p>
     </div>
 
-    <div v-if="gameId && spectatorMode" class="card qr-code-card">
+    <div v-if="gameId && spectatorMode && state.currentState !== 'GAME_COMPLETED'" class="card qr-code-card">
       <h3>Join the Game</h3>
       <div id="qr-code-container" style="margin-top: 20px;"></div>
       <p><strong>Link:</strong> <a :href="qrLink" target="_blank">{{ qrLink }}</a></p>
@@ -73,6 +73,7 @@ export default {
       newWord: '',
       guess: '',
       guessedWords: {},
+      gameInterval: null, // Store the interval ID to clear it later
     };
   },
   computed: {
@@ -119,7 +120,7 @@ export default {
         .catch((error) => console.error('Error fetching game state:', error));
     },
     addPlayer() {
-      if (!this.spectatorMode) {
+      if (!this.spectatorMode && this.state.currentState !== 'GAME_COMPLETED') {
         fetch(`/api/${this.gameId}/players`, {
           method: "POST",
           headers: {
@@ -168,7 +169,22 @@ export default {
     this.addPlayer();
     this.fetchState();
     this.generateQRCode();
+
+    // Refresh the game state every 5 seconds, only if the game is not ended
+    this.gameInterval = setInterval(() => {
+      if (this.state.currentState !== 'GAME_COMPLETED') {
+        this.fetchState();
+      } else {
+        clearInterval(this.gameInterval);
+      }
+    }, 5000);
   },
+  beforeUnmount() {
+    // Clear the interval when the component is destroyed
+    if (this.gameInterval) {
+      clearInterval(this.gameInterval);
+    }
+  }
 };
 </script>
 
