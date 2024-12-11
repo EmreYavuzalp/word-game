@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Landing Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+      background: linear-gradient(to bottom, #004c99, #66b3ff);
+      color: white;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      background: #00264d;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+    button {
+      background-color: #0066cc;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #004080;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome to the Word Game</h1>
+    <p>Player: <%= playerName %></p>
+    <% if (gameId) { %>
+      <p>Game ID: <%= gameId %></p>
+    <% } %>
+
+    <button id="create-game" style="display:none;">Create Game</button>
+  </div>
+
+  <script>
+    window.addEventListener('load', () => {
+      const gameId = '<%= gameId %>' || crypto.randomUUID();
+      const playerName = '<%= playerName %>';
+      const url = `/create-random-game/${gameId}`;
+
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ displayName: playerName }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        window.location.href = `/game?gameId=${data.gameId}&playerName=${playerName}`;
+      })
+      .catch(error => console.error('Error creating game:', error));
+    });
+  </script>
+</body>
+</html>

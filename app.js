@@ -238,6 +238,11 @@ app.get('/game/:gameId', (req, res) => {
   res.render('game', { state });
 });
 
+app.get('/create-game', (req, res) => {
+  const playerName = req.query.playerName || 'Anonymous';
+  const gameId = req.query.gameId || null;
+  res.render('create_game', { playerName, gameId });
+});
 
 app.listen(port, () => {
   console.log(`Word game server is running on http://localhost:${port}`);

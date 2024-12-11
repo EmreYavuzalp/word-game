@@ -1,10 +1,10 @@
-Sevgi ve Aşk|kalp, heart, aşk, love, sevgi, affection, mektup, letter
-Lezzet Yolculuğu|yemek, food, pizza, kebap, içecek, drink, tatlı, dessert
-Araba Macerası|araba, car, hız, speed, yarış, race, direksiyon, steering
-Doğa Rüyası|doğa, nature, ağaç, tree, çiçek, flower, orman, forest, göl, lake
-Kahramanlar Efsanesi|kahraman, hero, güç, power, cesaret, courage, savaş, battle
-Tekno Gelecek|robot, cihaz, device, teknoloji, tech, inovasyon, innovation
-Film Dünyası|film, movie, sahne, scene, aktör, actor, yönetmen, director
-Spor Zamanı|spor, sport, futbol, soccer, basketbol, basketball, koşu, run
-Müzik Rüyası|şarkı, song, nota, note, gitar, guitar, piyano, piano, melodi, melody
-Tatil Cenneti|deniz, sea, güneş, sun, plaj, beach, otel, hotel, seyahat, travel
+Tek kullanımlık nesneler|Kağıt mendil,Islak mendil,Plastik çatal,Plastik tabak
+Mutfak araçları|Bıçak,Çatal,Kaşık,Tencere
+Spor dalları|Futbol,Basketbol,Voleybol,Yüzme
+Taşıt türleri|Otomobil,Bisiklet,Motosiklet,Kamyon
+Meyveler|Elma,Armut,Muz,Kiraz
+Ülkeler|Türkiye,Almanya,Fransa,İtalya
+Meslekler|Doktor,Öğretmen,Mühendis,Hemşire
+Evcil hayvanlar|Kedi,Köpek,Kuş,Tavşan
+Renkler|Kırmızı,Mavi,Sarı,Yeşil
+Kıta isimleri|Asya,Avrupa,Afrika,Amerika

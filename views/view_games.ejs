@@ -73,40 +73,61 @@
       <% } %>
     </div>
 
+    <div id="qr-code-container" style="margin-top: 20px;"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
     <script>
-document.getElementById('create-game').addEventListener('click', () => {
-  const newGameId = crypto.randomUUID(); // Generate a unique game ID
-  const url = `http://localhost:3000/create-random-game/${newGameId}`;
+      document.getElementById('create-game').addEventListener('click', () => {
+        const newGameId = crypto.randomUUID(); 
+        const url = `http://localhost:3000/create-random-game/${newGameId}`;
 
-  // Extract 'playerName' from the query string
-  const params = new URLSearchParams(window.location.search);
-  const playerName = params.get('playerName') || 'Anonymous';
+        const params = new URLSearchParams(window.location.search);
+        const playerName = params.get('playerName') || 'Anonymous';
 
-  fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      displayName: playerName, // Send playerName as displayName
-    }),
-  })
-  .then(response => response.json())
-  .then(data => {
-    const gameContainer = document.getElementById('game-container');
-    const newGameHTML = `
-      <div class="game-card">
-        <p><strong>Game Title:</strong> ${data.gameTitle}</p>
-        <p><strong>Game ID:</strong> ${data.gameId}</p>
-        <p><a href="/game?gameId=${data.gameId}&playerName=${playerName}">Go to Game</a></p>
-      </div>
-    `;
-    gameContainer.insertAdjacentHTML('beforeend', newGameHTML);
-    console.log('New game created:', data);
-  })
-  .catch(error => console.error('Error creating game:', error));
-});
+        fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            displayName: playerName,
+          }),
+        })
+        .then(response => response.json())
+        .then(data => {
+          const gameContainer = document.getElementById('game-container');
+          const newGameHTML = `
+            <div class="game-card">
+              <p><strong>Game Title:</strong> ${data.gameTitle}</p>
+              <p><strong>Game ID:</strong> ${data.gameId}</p>
+              <p><a href="/game?gameId=${data.gameId}&playerName=${playerName}">Go to Game</a></p>
+            </div>
+          `;
+          gameContainer.insertAdjacentHTML('beforeend', newGameHTML);
+        })
+        .catch(error => console.error('Error creating game:', error));
+      });
 
+      function generateUUID() {
+        return (crypto.randomUUID && crypto.randomUUID()) || 
+                'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                const r = (Math.random() * 16) | 0;
+                return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+                });
+}
+
+      const qrCodeContainer = document.getElementById('qr-code-container');
+      const newGameId = generateUUID();
+      const landingPageUrl = `http://192.168.7.93:3000/create-game?gameId=${newGameId}&playerName=${encodeURIComponent('<%= playerName %>')}`;
+
+      QRCode.toCanvas(landingPageUrl, { width: 200 }, (error, canvas) => {
+        if (error) console.error(error);
+        qrCodeContainer.appendChild(canvas);
+        const urlText = document.createElement('p');
+        urlText.textContent = `Landing Page URL: ${landingPageUrl}`;
+        urlText.style.color = 'white';
+        qrCodeContainer.appendChild(urlText);
+      });
     </script>
   </div>
 </body>
