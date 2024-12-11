@@ -1,25 +1,29 @@
 <template>
   <div class="container">
-    <h1>Create a New Word Game</h1>
+    <div v-if="expertMode"  >
+      <h1>Create a New Word Game</h1>
 
-    <button @click="createRandomGame">Create Random Game</button>
+      <button @click="createRandomGame">Create Random Game</button>
 
-    <h2>Existing Games</h2>
-    <div id="game-container">
-      <div v-if="games.length > 0">
-        <div v-for="game in games" :key="game.id" class="game-card">
-          <p><strong>Game Title:</strong> {{ game.title }}</p>
-          <p><strong>Game ID:</strong> {{ game.id }}</p>
-          <p>
-            <a :href="`/game/${game.id}?playerName=${playerName}`">Go to Game</a>
-          </p>
+      <h2>Existing Games</h2>
+      <div id="game-container">
+        <div v-if="games.length > 0">
+          <div v-for="game in games" :key="game.id" class="game-card">
+            <p><strong>Game Title:</strong> {{ game.title }}</p>
+            <p><strong>Game ID:</strong> {{ game.id }}</p>
+            <p>
+              <a :href="`/game/${game.id}?playerName=${playerName}`">Go to Game</a>
+            </p>
+          </div>
         </div>
+        <p v-else>No games available. Create one now!</p>
       </div>
-      <p v-else>No games available. Create one now!</p>
     </div>
 
     <div id="qr-code-container" style="margin-top: 20px;"></div>
   </div>
+
+  
 </template>
 
 <script>
@@ -30,7 +34,8 @@ export default {
   data() {
     return {
       playerName: new URLSearchParams(window.location.search).get('playerName') || 'Guest',
-      games: []
+      games: [],
+      expertMode: new URLSearchParams(window.location.search).get('expertMode') === 'true',
     };
   },
   methods: {
@@ -75,12 +80,12 @@ export default {
         const v = c === 'x' ? r : (r & 0x3) | 0x8;
         return v.toString(16);
       });
-    }
+    },
   },
   mounted() {
     const qrCodeContainer = document.getElementById('qr-code-container');
     const newGameId = this.generateUUID();
-    const landingPageUrl = `http://qr-games.com/create-game?gameId=${newGameId}&playerName=${encodeURIComponent(this.playerName)}`;
+    const landingPageUrl = `http://qr-games.onrender.com/create-game?gameId=${newGameId}&playerName=${encodeURIComponent(this.playerName)}`;
 
     QRCode.toCanvas(landingPageUrl, { width: 200 }, (error, canvas) => {
       if (error) console.error(error);
@@ -89,11 +94,15 @@ export default {
       const urlText = document.createElement('p');
       urlText.textContent = `Landing Page URL: ${landingPageUrl}`;
       urlText.style.color = 'white';
-      qrCodeContainer.appendChild(urlText);
+      //if (this.expertMode) {
+        qrCodeContainer.appendChild(urlText);
+      //}
     });
 
-    this.fetchGames();
-    setInterval(this.fetchGames, 1000);
+    if (this.expertMode) {
+      this.fetchGames();
+      setInterval(this.fetchGames, 60000);
+    }
   },
 };
 </script>
