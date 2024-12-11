@@ -40,6 +40,11 @@
         <strong>{{ player.displayName }}</strong><br />
         Score: {{ player.score }}
       </div>
+
+      <div v-if="gameId && spectatorMode && state.currentState !== 'GAME_COMPLETED'" class="card qr-code-card">
+        <h3>Join the Game</h3>
+        <div id="qr-code-container"></div>
+      </div>
     </div>
 
     <div v-if="state.lastPlayed" class="card last-guess-card">
@@ -49,12 +54,6 @@
         <strong>Guess:</strong> {{ state.lastPlayed.guessedWord }}<br />
         <strong>Result:</strong> {{ state.lastPlayed.correct ? 'Correct' : 'Incorrect' }}
       </p>
-    </div>
-
-    <div v-if="gameId && spectatorMode && state.currentState !== 'GAME_COMPLETED'" class="card qr-code-card">
-      <h3>Join the Game</h3>
-      <div id="qr-code-container" style="margin-top: 20px;"></div>
-      <p><strong>Link:</strong> <a :href="qrLink" target="_blank">{{ qrLink }}</a></p>
     </div>
   </div>
 </template>
@@ -98,9 +97,13 @@ export default {
 
         try {
           const landingPageUrl = this.qrLink;
-          QRCode.toCanvas(landingPageUrl, { width: 200 }, (error, canvas) => {
-            if (error) console.error('QR code generation failed:', error);
-            else qrCodeContainer.appendChild(canvas);
+          QRCode.toCanvas(landingPageUrl, { width: 60 }, (error, canvas) => {
+            if (error) {
+              console.error('QR code generation failed:', error);
+            } else {
+              qrCodeContainer.innerHTML = '';
+              qrCodeContainer.appendChild(canvas);
+            }
           });
         } catch (error) {
           console.error('QR code generation failed:', error);
@@ -272,5 +275,19 @@ button:hover {
 
 .qr-code-card {
   text-align: center;
+  width: 100px; 
+  margin: 10px auto;
+  padding: 15px;
+}
+
+#qr-code-container {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto;
+}
+
+#qr-code-container canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 </style>
