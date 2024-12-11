@@ -83,7 +83,7 @@ export default {
       return this.state.players.filter((p) => p.id !== this.winner.id);
     },
     qrLink() {
-      return `http://qr-games.com/join-game/${this.gameId}`;
+      return `http://qr-games.onrender.com/join-game/?gameId=${this.gameId}`;
     },
   },
   methods: {

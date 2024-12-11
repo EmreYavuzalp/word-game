@@ -106,9 +106,7 @@ export default {
       const urlText = document.createElement('p');
       urlText.textContent = `Landing Page URL: ${landingPageUrl}`;
       urlText.style.color = 'white';
-      if (this.expertMode) {
-        qrCodeContainer.appendChild(urlText);
-      }
+      qrCodeContainer.appendChild(urlText);
     });
 
     if (this.expertMode) {
