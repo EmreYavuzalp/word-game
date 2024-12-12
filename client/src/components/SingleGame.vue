@@ -55,6 +55,17 @@
         <strong>Result:</strong> {{ state.lastPlayed.correct ? 'Correct' : 'Incorrect' }}
       </p>
     </div>
+    <div v-if="state.gameResponses.length" class="game-responses">
+      <h3>Game Responses</h3>
+      <ul>
+        <li v-for="(response, index) in state.gameResponses" :key="index">
+          <strong>{{ response.playerName }}</strong>: 
+          "{{ response.guessedWord }}" 
+          - {{ response.isGuessedRight ? "Correct" : "Incorrect" }} 
+          <span class="roast-response">({{ response.roastResponse.openAiResponse }})</span>
+        </li>
+      </ul>
+    </div>
   </div>
 </template>
 
@@ -65,6 +76,7 @@ export default {
   data() {
     return {
       state: {},
+      lastSpokenResponseId: null, // Track last spoken response
       gameId: null,
       playerName: null,
       spectatorMode: new URLSearchParams(window.location.search).get('spectatorMode') === 'true',
@@ -72,7 +84,8 @@ export default {
       newWord: '',
       guess: '',
       guessedWords: {},
-      gameInterval: null, // Store the interval ID to clear it later
+      gameInterval: null, // Store interval ID
+      spokenResponses: new Set(), // Track spoken responses
     };
   },
   computed: {
@@ -83,7 +96,7 @@ export default {
       return this.state.players.filter((p) => p.id !== this.winner.id);
     },
     qrLink() {
-      return `http://qr-games.onrender.com/join-game/?gameId=${this.gameId}`;
+      return `http://qr-games.com/join-game/?gameId=${this.gameId}`;
     },
   },
   methods: {
@@ -112,15 +125,37 @@ export default {
     },
     fetchState() {
       fetch(`/api/${this.gameId}/state`)
-        .then((res) => res.json())
-        .then((data) => {
-          this.state = data;
-          this.guessedWords = this.state.guessedWords.reduce((acc, word) => {
-            acc[word.word] = word;
-            return acc;
-          }, {});
-        })
-        .catch((error) => console.error('Error fetching game state:', error));
+      .then((res) => res.json())
+      .then((data) => {
+        this.state = data;
+        this.guessedWords = this.state.guessedWords.reduce((acc, word) => {
+          acc[word.word] = word;
+          return acc;
+        }, {});
+        if (this.spectatorMode){
+          this.handleRoastResponses();
+        }
+      })
+      .catch((error) => console.error('Error fetching game state:', error));
+    },
+    handleRoastResponses() {
+      this.state.gameResponses.forEach((response) => {
+        if (response.id > this.lastSpokenResponseId) {
+          this.speakMessage(response.roastResponse.openAiResponse);
+          
+          // Update last spoken response ID
+          this.lastSpokenResponseId = response.id;
+        }
+      });
+    },
+    speakMessage(message) {
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(message);
+        utterance.lang = 'tr-TR'; // Set language if needed
+        window.speechSynthesis.speak(utterance);
+      } else {
+        console.error("Speech Synthesis not supported in this browser.");
+      }
     },
     addPlayer() {
       if (!this.spectatorMode && this.state.currentState !== 'GAME_COMPLETED') {
@@ -289,5 +324,32 @@ button:hover {
 #qr-code-container canvas {
   width: 100% !important;
   height: 100% !important;
+}
+
+.game-responses {
+  margin-top: 20px;
+  padding: 15px;
+  background: #334455;
+  border-radius: 10px;
+  color: white;
+}
+
+.roast-response {
+  font-style: italic;
+  color: #ffcc00;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  padding: 8px 0;
+  border-bottom: 1px solid #555;
+}
+
+li:last-child {
+  border-bottom: none;
 }
 </style>
