@@ -42,16 +42,17 @@ async function playGame(command, playerName, word, isGuessedRight) {
       gameState.title
     }. \rKelimeler: ${gameState.words.join(
       ","
-    )}. Oyuncu: ${playerName}\rKelime: ${word}\rDoğru mu: ${isGuessedRight}\rKomik bir tezahürat yapacaksın, ama 10 kelimeyi geçmemeli. Bilmeyenleri haşlayabilirsin. Yanlışsa doğru kelimeyi söylememen lazım..`,
+    )}. Oyuncu: ${playerName}\rKelime: ${word}\rDoğru mu: ${isGuessedRight}\rKomik bir tezahürat yapacaksın, ama 10 kelimeyi geçmemeli. Bilmeyenlerle sarkastik bir şekilde dalga geçmelisin. Yanlışsa doğru kelimeyi söylememen lazım.`,
   };
 
   try {
     const response = await axios.post(
-      "https://api.openai.com/v1/chat/completions",
+      "https://api.x.ai/v1/chat/completions",
       {
-        model: "gpt-3.5-turbo",
+        model: "grok-beta",
+        stream: false,
+        temperature: 0,
         messages: [prompt],
-        max_tokens: 100,
       },
       {
         headers: {
