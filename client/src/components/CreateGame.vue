@@ -1,9 +1,21 @@
 <template>
   <div class="container">
     <h1>Welcome to the Word Game</h1>
-    <p>Player: {{ playerName }}</p>
+    
+    <form @submit.prevent="createGame">
+      <label for="playerName">Player Name:</label>
+      <input 
+        type="text" 
+        id="playerName" 
+        v-model="playerName" 
+        placeholder="Enter your name" 
+        required 
+      />
+      <button type="submit" :disabled="gameCreated">Create Game</button>
+    </form>
+
+    <p v-if="gameCreated">Game created successfully!</p>
     <p v-if="gameId">Game ID: {{ gameId }}</p>
-    <button v-if="!gameCreated" @click="createGame">Create Game</button>
   </div>
 </template>
 
@@ -12,13 +24,18 @@ export default {
   name: 'CreateGame',
   data() {
     return {
-      playerName: new URLSearchParams(window.location.search).get('playerName') || 'Anonymous',
+      playerName: '',
       gameId: new URLSearchParams(window.location.search).get('gameId') || null,
       gameCreated: false
     };
   },
   methods: {
     async createGame() {
+      if (!this.playerName) {
+        alert("Player name is required!");
+        return;
+      }
+
       const gameId = this.gameId || this.generateUUID();
       const url = `/api/create-random-game/${gameId}`;
 
@@ -50,12 +67,7 @@ export default {
         return v.toString(16);
       });
     }
-  },
-  mounted() {
-    if (!this.gameId) {
-      this.createGame();
-    }
-  },
+  }
 };
 </script>
 
@@ -75,17 +87,36 @@ body {
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+label {
+  font-size: 16px;
+  font-weight: bold;
+}
+input {
+  padding: 10px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+}
 button {
   background-color: #0066cc;
   color: white;
   border: none;
   padding: 10px 20px;
-  margin: 5px;
+  margin-top: 10px;
   border-radius: 5px;
   font-size: 16px;
   cursor: pointer;
 }
-button:hover {
+button:disabled {
+  background-color: #999;
+  cursor: not-allowed;
+}
+button:hover:not(:disabled) {
   background-color: #004080;
 }
 </style>

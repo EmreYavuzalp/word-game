@@ -97,7 +97,7 @@ export default {
   mounted() {
     const qrCodeContainer = document.getElementById('qr-code-container');
     this.gameUuid = this.generateUUID();
-    const landingPageUrl = `http://qr-games.onrender.com/create-game?gameId=${this.gameUuid}&playerName=${encodeURIComponent(this.playerName)}`;
+    const landingPageUrl = `http://qr-games.onrender.com/create-game?gameId=${this.gameUuid}`;
 
     QRCode.toCanvas(landingPageUrl, { width: 200 }, (error, canvas) => {
       if (error) console.error(error);
