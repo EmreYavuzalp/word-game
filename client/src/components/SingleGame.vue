@@ -100,11 +100,20 @@ export default {
     },
   },
   methods: {
+    redirectToMainPage() {
+      setTimeout(() => {
+        window.location.href = 'http://qr-games.onrender.com';
+      }, 10000); // Redirect after 10 seconds
+    },
     async generateQRCode() {
       this.$nextTick(() => {
         const qrCodeContainer = document.getElementById('qr-code-container');
-        if (!qrCodeContainer || !this.gameId) {
-          console.error('QR code container not found or gameId is missing');
+        if (!qrCodeContainer) {
+          console.error('QR code container not found');
+          return;
+        }
+        if (!this.gameId) {
+          console.error('GameId is missing');
           return;
         }
         try {
