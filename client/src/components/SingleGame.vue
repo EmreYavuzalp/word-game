@@ -42,7 +42,6 @@
       </div>
 
       <div v-if="gameId && spectatorMode && state.currentState !== 'GAME_COMPLETED'" class="card qr-code-card">
-        <h3>Join the Game</h3>
         <div id="qr-code-container"></div>
       </div>
     </div>
