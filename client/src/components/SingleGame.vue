@@ -107,10 +107,9 @@ export default {
           console.error('QR code container not found or gameId is missing');
           return;
         }
-
         try {
           const landingPageUrl = this.qrLink;
-          QRCode.toCanvas(landingPageUrl, { width: 60 }, (error, canvas) => {
+          QRCode.toCanvas(landingPageUrl, { width: 100 }, (error, canvas) => {
             if (error) {
               console.error('QR code generation failed:', error);
             } else {
@@ -128,6 +127,10 @@ export default {
       .then((res) => res.json())
       .then((data) => {
         this.state = data;
+          if (this.state.currentState === 'GAME_COMPLETED') {
+            clearInterval(this.gameInterval);
+            this.redirectToMainPage();
+          }
         this.guessedWords = this.state.guessedWords.reduce((acc, word) => {
           acc[word.word] = word;
           return acc;
@@ -312,12 +315,12 @@ button:hover {
   text-align: center;
   width: 100px; 
   margin: 10px auto;
-  padding: 15px;
+  padding: 3px;
 }
 
 #qr-code-container {
-  width: 60px;
-  height: 60px;
+  width: 100px;
+  height: 100px;
   margin: 0 auto;
 }
 
