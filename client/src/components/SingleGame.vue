@@ -55,7 +55,7 @@
         <strong>Result:</strong> {{ state.lastPlayed.correct ? 'Correct' : 'Incorrect' }}
       </p>
     </div>
-    <div v-if="state.gameResponses.length" class="game-responses">
+    <div v-if="state?.gameResponses?.length" class="game-responses">
       <h3>Game Responses</h3>
       <ul>
         <li v-for="(response, index) in state.gameResponses" :key="index">
